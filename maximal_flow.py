@@ -6,7 +6,7 @@ class MaximalFlow:
         self.network = []
         with open("./network.txt", "r") as file: 
             for line in file:
-                self.network.append(line.split())
+                self.network.append([int(num) for num in line.split()])
 
         self.source = 0
         self.sink = len(self.network) - 1
@@ -26,13 +26,12 @@ class MaximalFlow:
 
             # enqueue neighbors
             for i, neighbor in enumerate(network[current]):
-                neighbor = int(neighbor)
 
                 if neighbor > 0 and i not in marked: 
                     queue.append(i)
                     parent[i] = current
                     
-                    # return true if we find the sink
+                    # find the path if we reach the sink
                     if i == sink: 
                         path = []
                         current = sink
@@ -42,47 +41,50 @@ class MaximalFlow:
                         path.append(source) 
                         path.reverse()
 
-
+                        # get the max slow in the path
                         for j in range(len(path) - 1):
                             curr, next = path[j], path[j + 1]
-                            saturating_flow = min(saturating_flow, int(network[curr][next]))
+                            saturating_flow = min(saturating_flow, network[curr][next])
 
                         return path, saturating_flow
+                    
         return None, None
                 
     def maximal_flow_algorithm(self): 
+        print("Initial Network:", self.network)
         
         max_flow = 0
 
         # get a path from source to sink
         path, saturating_flow = self.bfs(self.source, self.sink, self.network)
 
-        print(self.network)
+        print("Saturating Path:", path, "Flow:", saturating_flow)
 
         while path: 
-
-
             # update max_flow
-            max_flow = max(max_flow, saturating_flow)
+            max_flow += saturating_flow
             
-
             # reverse units of capacity used by the path
             for i in range(len(path) - 1):
                 curr, next = path[i], path[i + 1]
-                temp = self.network[curr][next]
-                self.network[curr][next] = self.network[next][curr]
-                self.network[next][curr] = temp
+                self.network[curr][next] -= saturating_flow
+                self.network[next][curr] += saturating_flow
 
-            print(self.network)
+            print("Updated Network", self.network)
+
             # get the new path
             path, saturating_flow = self.bfs(self.source, self.sink, self.network)
 
-            return max_flow
+            print("Saturating Path:", path, "Flow:", saturating_flow)
+
+        return max_flow, self.network
 
 
 def main(): 
     algo = MaximalFlow()
-    print(algo.maximal_flow_algorithm())
+    max_flow, network = algo.maximal_flow_algorithm()
+    print("Maximal Flow:", max_flow)
+    print("Flow:", network)
 
 if __name__ == "__main__": 
     main()
